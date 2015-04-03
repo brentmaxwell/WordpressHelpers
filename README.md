@@ -46,4 +46,25 @@ Create a constructor with the following properties:
     `$object_type` parameter for [`register_taxonomy()`](https://codex.wordpress.org/Function_Reference/register_taxonomy)
 *   `$this->options` **array**  
     `$args` parameter for [`register_taxonomy()`](https://codex.wordpress.org/Function_Reference/register_taxonomy)
-	
+
+## GeoMetabox
+
+Meta box to show geo content
+
+## GoogleStaticMapsShortcode
+
+Shortcode to display a google static map.
+
+*   `class`  
+    CSS class for the image
+*   `height`  
+    Height of the image
+*   `width`  
+    Width of the image
+*   `polyline`  
+    [Encoded polyline](https://developers.google.com/maps/documentation/staticmaps/#EncodedPolylines)
+*   `markers`
+    Space delimited string of markers
+*   `maptype`  
+    [Type of map](https://developers.google.com/maps/documentation/staticmaps/#MapTypes)
+*   [`scale`](https://developers.google.com/maps/documentation/staticmaps/#scale_values)
