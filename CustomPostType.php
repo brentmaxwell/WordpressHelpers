@@ -56,16 +56,16 @@ class CustomPostType{
 
 		$meta = get_post_meta($post->ID);
 		foreach($metabox['args']['fields'] as $field){
-			echo $this->generate_metabox_field($field['id'],$meta[$field['id']][0],$field['title'],$field['type']);	
+			echo $this->generate_metabox_field($field,$meta[$field['id']][0]);	
 		}
 		echo "</tbody>";
 		echo "</table>";
 	}
 	
-	public function generate_metabox_field($meta_id,$meta_value,$label,$type="text"){
+	public function generate_metabox_field($field,$meta_value){
 		$output =  '<tr><td><label for="'.$field['id'].'">';
 		$output .=  __( $field['title']);
-		$output .= '</label></td><td>';
+		$output .= '</label></td><td class="widefat">';
 		$output .= '<input id="'.$field['id'].'" name="'.$field['id'].'"';
 		switch($field['type'])
 		{
@@ -83,10 +83,10 @@ class CustomPostType{
 				$output .= ' type="datetime-local" value="'. date("Y-m-d\TH:i:s",strtotime($meta_value)).'"';
 				break;
 			default:
-				$output .= ' type="text" value="'.esc_attr( $meta_value ).'"';
+				$output .= ' type="'.$field['type'].'" value="'.esc_attr( $meta_value ).'"';
 				break;
 		}
-		$output .= '/>';
+		$output .= ' class="widefat"/>';
 		if(isset($field['label'])){
 			$output .='('.$field['label'] .')';	
 		}
