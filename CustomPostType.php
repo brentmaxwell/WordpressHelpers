@@ -3,11 +3,10 @@
 class CustomPostType{
 	public function __construct(){
 		register_activation_hook( __FILE__, array($this,'activate' ));
-		add_action('init', array( $this, 'register_post_type'));
-		add_action( 'add_meta_boxes_'.$this->post_type, array( $this, 'add_meta_box' ) );
-		add_filter('manage_edit-'.$this->post_type.'_columns', array($this,'add_columns'));
-		add_action('manage_'.$this->post_type.'_posts_custom_column', array($this,'display_columns'), 10, 2);
-		add_action( 'save_post', array( $this, 'save_metabox' ) );
+		add_action( 'init' , array( $this, 'register_post_type'));
+		add_filter( 'manage_edit-' . $this->post_type.'_columns', array($this,'add_columns'));
+		add_action( 'manage_' . $this->post_type.'_posts_custom_column', array($this,'display_columns'), 10, 2);
+		add_action( 'save_post' , array( $this, 'save_metabox' ) );
 	}
 	
 	public function activate(){
@@ -15,6 +14,7 @@ class CustomPostType{
 	}
 	
 	public function register_post_type(){
+	$this->options['register_meta_box_cb'] = array($this,'add_meta_box');
 		register_post_type(
 			$this->post_type,
 			$this->options
@@ -35,6 +35,16 @@ class CustomPostType{
 					$metabox
 				);
 			}
+			if(isset($this->parent_type)){
+				add_meta_box(
+					'post_parent_metabox',
+					__('Parent'),
+					array($this,'render_parent_meta_box'),
+					$this->post_type,
+					'side',
+					'high'
+				);
+			}
 		}
 	}
 	
@@ -53,22 +63,76 @@ class CustomPostType{
 	}
 	
 	public function generate_metabox_field($meta_id,$meta_value,$label,$type="text"){
-		$output =  '<tr><td><label for="'.$meta_id.'">';
-		$output .=  __( $label);
+		$output =  '<tr><td><label for="'.$field['id'].'">';
+		$output .=  __( $field['title']);
 		$output .= '</label></td><td>';
-		$output .= '<input type="'.$type.'" id="'.$meta_id.'" name="'.$meta_id.'"';
-		switch($type)
+		$output .= '<input id="'.$field['id'].'" name="'.$field['id'].'"';
+		switch($field['type'])
 		{
 			case 'checkbox':
-				$output .= ' value="1" '.checked( $meta_value, true, false );
+				$output .= ' type="checkbox" value="1" '.checked( $meta_value, true, false );
+				break;
+			case 'time':
+				$d1 = new DateTime();
+				$d2 = new DateTime();
+				$d2->add(new DateInterval('PT'.$meta_value.'S'));
+				$elapsed_time = $d2->diff($d1);
+				$output .= ' type="time" value="'. $elapsed_time->format('%H:%I:%S').'"';
+				break;
+			case 'datetime-local':
+				$output .= ' type="datetime-local" value="'. date("Y-m-d\TH:i:s",strtotime($meta_value)).'"';
 				break;
 			default:
-				$output .= ' value="'.esc_attr( $meta_value ).'"';
+				$output .= ' type="text" value="'.esc_attr( $meta_value ).'"';
 				break;
 		}
-		$output .= '"/></td></tr>';
+		$output .= '/>';
+		if(isset($field['label'])){
+			$output .='('.$field['label'] .')';	
+		}
+		$output .= '</td></tr>';
         
 		return $output;
+	}
+	
+	public function render_parent_meta_box($post){
+		$parents = get_posts(
+	        array(
+	            'post_type'   => $this->parent_type, 
+	            'orderby'     => 'post_date', 
+	            'order'       => 'DESC', 
+	            'numberposts' => -1 
+	        )
+	    );
+		echo '<script type="text/javascript">'."\n";
+		echo 'function setParentID(selected){'."\n";
+		echo 'document.getElementById("parent_id").value = selected.value;'."\n";
+		echo '};'."\n";
+		echo '</script>';
+		echo "<table>";
+		echo "<tbody>";
+		// Add an nonce field so we can check for it later.
+		wp_nonce_field( 'post_parent_metabox', 'post_parent_metabox_nonce' );
+		echo $this->generate_metabox_field(array('id'=>'parent_id','title'=>'ID'),$post->post_parent,'ID');
+	 	if ( !empty( $parents ) ) {
+        	echo '<tr><td colspan="2"><select id="parent_id_select" class="widefat" onchange="setParentID(this);">';
+			echo '<option value="0">--None--</option>';
+	        foreach ( $parents as $parent ) {
+				if($parent->post_type != $this->post_type){
+    	        	printf( '<option value="%s"%s>%s</option>', esc_attr( $parent->ID ), selected( $parent->ID, $post->post_parent, false ), esc_html( '(' . get_the_date('Y/m/d',$parent->ID) .') ' . $parent->post_title ) );
+				}
+        	}
+        	echo '</select></td></tr>';
+    	} 
+		if($post->post_parent != null || $post->post_parent != 0){
+			echo '<tr><td colspan="2">';
+			echo '<a href="'.get_edit_post_link($post->post_parent).'">';
+			echo get_the_title($post->post_parent);
+			echo '</a>';
+			echo "</td></tr>";
+		}
+		echo "</tbody>";
+		echo "</table>";
 	}
 	
 	public function save_metabox($post_id){
@@ -94,16 +158,29 @@ class CustomPostType{
 			}
 	
 			foreach($metabox['fields'] as $field){
-				$field_data = sanitize_text_field( $_POST[$field['id']] );
+				switch($field['type']){
+					case 'checkbox':
+						$field_data = sanitize_text_field( $_POST[$field['id']] );
+						break;
+					case 'datetime-local':
+						$field_data = date('c',strtotime(sanitize_text_field( $_POST[$field['id']] )));
+						break;
+					default:
+						$field_data = sanitize_text_field( $_POST[$field['id']] );
+						break;
+				}
+				
 				update_post_meta( $post_id, $field['id'], $field_data );	
 			}
 		}
-		
 	}
 	
 	public function add_columns($columns){
 		if(isset($this->columns)){
 			$columns = array_merge($columns,$this->columns);
+		}
+		if(isset($this->parent_type)){
+			$columns['parent'] = __('Parent');
 		}
 		return $columns;
 	}
@@ -114,5 +191,13 @@ class CustomPostType{
 				echo get_post_meta($id,$column_name,true);
 			}
 		}
-	}   
+		if($column_name == 'parent' && isset($this->parent_type)){
+			$parent_post = get_post_field('post_parent',$id,'raw'); 
+			if($parent_post != null){
+				echo '<a href="'.get_edit_post_link($parent_post).'">';
+				echo get_post_field('post_title',$parent_post);
+				echo '</a>';
+			}
+		}
+	}
 }
