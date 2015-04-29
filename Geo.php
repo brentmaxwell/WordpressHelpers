@@ -1,6 +1,6 @@
 <?php
 
-class GeoHelpers{
+class GeoHelper{
 	public function __construct(){
 		add_filter(    'manage_posts_columns'       , array( $this , 'add_columns'     ) );
 		add_action(    'manage_posts_custom_column' , array( $this , 'display_columns' ) , 10 , 2 );
@@ -8,6 +8,7 @@ class GeoHelpers{
 		add_action(    'save_post'                  , array( $this , 'save_metabox'    ) );
 		add_action(    'admin_init'                 , array( $this , 'settings_init'   ) );
 		add_shortcode( 'staticmap'                  , array( $this , 'do_shortcode'    ) );
+		add_action(    'save_post'                  , array( $this , 'save_hook'       ) );
 	}
 	
 	public function do_shortcode( $args ){
@@ -233,5 +234,19 @@ class GeoHelpers{
 			<input name="geohelper_google_api_key" id="geohelper_google_api_key" type="text" value="<?php echo get_option( 'geohelper_google_api_key'); ?>" />
 		<?
 	}
+	
+	function save_hook($post_id){
+		$post = get_post($post_id);
+		$meta = get_post_meta($post_id);
+		if(array_key_exists('geo_latitude',$meta) && array_key_exists('geo_longitude',$meta) && !empty($meta['geo_latitude'][0]) && !empty($meta['geo_longitude'][0])){
+			$url = "https://maps.googleapis.com/maps/api/geocode/json?";
+			$url = add_query_arg('latlng',$meta['geo_latitude'][0].','.$meta['geo_longitude'][0],$url);
+			$url = add_query_arg('key',get_option('geohelper_google_api_key'),$url);
+			$response = wp_remote_get($url);
+			if(is_array($response)){
+				update_post_meta($post_id,'geo_data',$response['body']);
+			}
+		}
+	}
 }
-$myActiveLife_AdminMeta_GeoMetaBox = new MyActiveLife_AdminMeta_GeoMetaBox();
+$geoHeler = new GeoHelper();
