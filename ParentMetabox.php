@@ -2,7 +2,7 @@
 	class ParentMetabox{
 		public function __construct(){
 			add_action( 'add_meta_boxes', array( $this, 'add_metaboxes' ) );
-			add_filter( 'manage_post__columns', array($this,'add_columns'));
+			add_filter( 'manage_post_columns', array($this,'add_columns'));
 			add_action( 'manage_post_custom_column', array($this,'display_columns'), 10, 2);
 		}
 		

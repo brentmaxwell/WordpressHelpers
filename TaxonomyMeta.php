@@ -70,7 +70,6 @@ function get_term_meta($slug, $taxonomy){
 	$query = new WP_Query(
 		array(
 			'post_type' => 'taxonomy-meta',
-			'post_excerpt' => $taxonomy,
 			'post_name' => $term
 		)
 	);
