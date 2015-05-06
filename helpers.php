@@ -1,6 +1,7 @@
 <?php
 /*
 Plugin Name: Helpers
+Provides: lib-helpers
 Description: Helpers
 Author: Brent Maxwell
 Version: 0.1
@@ -17,9 +18,8 @@ add_action("activated_plugin", function(){
 		update_option('active_plugins', $active_plugins);
 	}	
 });
+include('settings.php');
 include('CustomTaxonomy.php');
 include('CustomPostType.php');
-$dir = glob( dirname( __FILE__ ) . "/Geo/*.php" );
-foreach ( $dir as $file ){
-	require $file;
-}
+include('Geo.php');
+include('Api.php');

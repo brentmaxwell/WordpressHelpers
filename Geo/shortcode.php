@@ -18,7 +18,7 @@ class GeoHelper_Shortcode{
 				'scale'           => 1,
 				'zoom'            => 0,
 				'class'           => null,
-				'key'             => get_option('geohelper_google_apikey')
+				'key'             => get_option('helper_geo_google_apikey')
 			),
 			$args,
 			'staticmap'

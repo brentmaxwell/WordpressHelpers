@@ -101,14 +101,20 @@ class GeoHelper_Metabox{
 			if ( ! current_user_can( 'edit_post', $post_id ) )
 				return $post_id;
 		}
-
-		$geo_latitude = sanitize_text_field( $_POST['geo_latitude'] );
-		$geo_longitude = sanitize_text_field( $_POST['geo_longitude'] );
-		$geo_public = $_POST['geo_public'];
+		delete_post_meta($post_id,'geo_latitude');
+		delete_post_meta($post_id,'geo_longitude');
+		delete_post_meta($post_id,'geo_public');
 		
-		update_post_meta( $post_id, 'geo_latitude', $geo_latitude );
-		update_post_meta( $post_id, 'geo_longitude', $geo_longitude );
-		update_post_meta( $post_id, 'geo_public', $geo_public );	
+		if(!empty($_POST['geo_latitude']) && !empty($_POST['geo_longitude'])){
+			$geo_latitude = sanitize_text_field( $_POST['geo_latitude'] );
+			$geo_longitude = sanitize_text_field( $_POST['geo_longitude'] );
+			$geo_public = $_POST['geo_public'];
+			
+			update_post_meta( $post_id, 'geo_latitude', $geo_latitude );
+			update_post_meta( $post_id, 'geo_longitude', $geo_longitude );
+			update_post_meta( $post_id, 'geo_public', $geo_public );
+			
+		}
 	}
 	
 	function geocoding($post_id){
@@ -125,7 +131,7 @@ class GeoHelper_Metabox{
 			$process = true;
 		}
 		if($process){
-			$url = add_query_arg('key',get_option('geohelper_google_api_key'),$url);
+			$url = add_query_arg('key',get_option('helper_geo_google_apikey'),$url);
 			$response = wp_remote_get($url);
 			if(is_array($response)){
 				$raw = json_decode($response['body']);
